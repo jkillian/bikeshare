@@ -28,7 +28,7 @@ df.plot(kind='scatter', x='humidity', y='count')
 plt.title("Humidity vs Count")
 
 # temp
-df.plot(kind='scatter', x='temp', y='count')
+df.plot(kind='scatter', x='temp', y='count', alpha=0.1)
 plt.title("Temp vs Count")
 
 # atemp
