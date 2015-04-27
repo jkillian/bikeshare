@@ -9,6 +9,7 @@ from sklearn.grid_search import GridSearchCV
 class BikeShare():
 
     def __init__(self, is_random=False, split_date=16):
+        self.months = ['jan', 'feb', 'mar', 'apr', 'may', 'june', 'july', 'aug', 'sept', 'oct', 'nov', 'dec']
         data = pd.read_csv('data/train.csv', parse_dates='datetime', index_col='datetime')
         self.holdout = pd.read_csv('data/test.csv', parse_dates='datetime', index_col='datetime')
 
@@ -21,6 +22,10 @@ class BikeShare():
         self.holdout['month'] = self.holdout.index.month
         self.holdout['year'] = self.holdout.index.year - 2011
         self.holdout['day_of_week'] = self.holdout.index.weekday
+
+        for i, month in enumerate(self.months):
+            data[month] = [1 if k == i else 0 for k in data['month']]
+            self.holdout[month] = [1 if k == i else 0 for k in self.holdout['month']]
 
         if is_random:
             mask = np.random.rand(len(data)) < 0.75
@@ -52,8 +57,9 @@ class BikeShare():
     def gradient_boosting_regressor(self):
         features = ['season', 'holiday', 'workingday', 'weather',
                     'temp', 'atemp', 'humidity', 'windspeed', 'year',
-                    'month', 'day_of_week', 'hour']
+                    'day_of_week', 'hour']
 
+        features.extend(self.months)
         gbr = GradientBoostingRegressor(n_estimators=80, learning_rate=.05, max_depth=10, min_samples_leaf=20)
         gbr.fit(self.train[features], self.train['log-count'])
         self.output_results(gbr, "gbr", features)
@@ -86,7 +92,7 @@ class BikeShare():
     def grid_search(self):
         param_grid = {'learning_rate': [0.1, 0.05, 0.01],
                       'max_depth': [10, 15, 20],
-                      'min_samples_leaf': [3, 5, 10, 20],
+                      'min_samples_leaf': [5, 10, 20],
                       }
         est = GradientBoostingRegressor(n_estimators=500)
         features = ['season', 'holiday', 'workingday', 'weather',
@@ -97,7 +103,7 @@ class BikeShare():
             self.train[features], self.train['log-count'])
 
         # best hyperparameter setting
-        gs_cv.best_params_
+        print gs_cv.best_params_
 
         # Baseline error
         # error_count = mean_absolute_error(self.test['log-count'], gs_cv.predict(self.test[features]))
@@ -107,11 +113,9 @@ class BikeShare():
         # df = pd.DataFrame({'datetime':test['datetime'], 'count':result})
         # df.to_csv('results2.csv', index = False, columns=['datetime','count'])
 
-        print param_grid
-
 
 if __name__ == '__main__':
     bike_share = BikeShare()
-    # bike_share.elastic_net()
-    # bike_share.gradient_boosting_regressor()
-    bike_share.grid_search()
+    bike_share.elastic_net()
+    bike_share.gradient_boosting_regressor()
+    # bike_share.grid_search()
